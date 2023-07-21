@@ -19,6 +19,20 @@ defmodule MidiWled.MixProject do
     ]
   end
 
+  def releases do
+    [
+      example_cli_app: [
+        steps: [:assemble, &Burrito.wrap/1],
+        burrito: [
+          targets: [
+            macos: [os: :darwin, cpu: :x86_64],
+            linux: [os: :linux, cpu: :x86_64]
+          ],
+        ]
+      ]
+    ]
+    end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
@@ -26,7 +40,8 @@ defmodule MidiWled.MixProject do
       {:portmidi, git: "https://github.com/Kovak/ex-portmidi/", tag: "5.1.2"},
       # {:portmidi, "5.1.1"},
       {:jason, "~> 1.2"},
-      {:finch, "~> 0.13"}
+      {:finch, "~> 0.13"},
+      {:burrito, github: "burrito-elixir/burrito"}
     ]
   end
 end
