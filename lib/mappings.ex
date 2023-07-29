@@ -93,88 +93,102 @@ defmodule MidiWled.Mappings do
     11 => @effects.strobe
     # TODO: add 12th mapping
   }
+  @cc_val_groups [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 127]
 
   def midi_to_wled({pid, messages}) when length(messages) > 1 do
-    [message | _] = Enum.reverse(messages)
-    midi_to_wled({pid, [message]})
+    # [message | _] = Enum.reverse(messages) #this would work if each light had its own track, but drops events in shared track mode
+    Enum.each(messages, &midi_to_wled({pid, [&1]}))
   end
 
-  def midi_to_wled({_pid, [{{189, knob_num, cc_val}, _timestamp}]}) when knob_num in 1..4 do
+  def midi_to_wled({_pid, [{{189, knob_num, cc_val}, _timestamp}]}) when knob_num in 1..4 and cc_val in @cc_val_groups do
     # Set in memory color value based on cc_val per light
     # these only match up because the knobs are 1-4
     light_num = knob_num
     color = calculate_color(cc_val)
-    MidiWled.post_color(light_num, color)
+    IO.puts("handle color " <> inspect(knob_num) <> " " <> inspect(cc_val))
+
+    Task.async(fn -> MidiWled.post_color(light_num, color) end)
   end
 
-  def midi_to_wled({_pid, [{{189, knob_number, cc_val}, _timestamp}]}) when knob_number in 5..8 do
+  def midi_to_wled({_pid, [{{189, knob_num, cc_val}, _timestamp}]}) when knob_num in 5..8 and cc_val in @cc_val_groups do
     # offset light number from knob number
-    light_num = knob_number - 4
-    brightness = cc_val |> calculate_brightness() |> IO.inspect(label: "#{__MODULE__}75")
-    MidiWled.post_brightness(light_num, brightness)
+    light_num = knob_num - 4
+    brightness = calculate_brightness(cc_val)
+    IO.puts("handle brightness " <> inspect(knob_num) <> " " <> inspect(cc_val))
+
+    Task.async(fn -> MidiWled.post_brightness(light_num, brightness) end)
   end
 
   ## For The OP-Z the lowest note on the keyboard starts with 17 which is octave 2
 
-  def midi_to_wled({_pid, [{{157, note_val, 100}, _timestamp}]}) when note_val in 17..28 do
+  def midi_to_wled({_pid, [{{157, note_val, vel}, _timestamp}]}) when note_val in 17..28 and vel > 0 do
     # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
     # for light 1
     adjusted_note_val = note_val - 16
     effect = @effect_mappings[adjusted_note_val]
-    MidiWled.post(1, effect)
+    IO.puts("handle light 1 " <> inspect(note_val))
+
+    Task.async(fn -> MidiWled.post(1, effect) end)
   end
 
-  def midi_to_wled({_pid, [{{157, note_val, 100}, _timestamp}]}) when note_val in 29..40 do
+  def midi_to_wled({_pid, [{{157, note_val, vel}, _timestamp}]}) when note_val in 29..40 and vel > 0 do
     # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
     # for light 2
     adjusted_note_val = note_val - 28
     effect = @effect_mappings[adjusted_note_val]
-    MidiWled.post(2, effect)
-    IO.puts("handle light 2 octave 3")
+    IO.puts("handle light 2 " <> inspect(note_val))
+    Task.async(fn -> MidiWled.post(2, effect) end)
   end
 
-  def midi_to_wled({_pid, [{{157, note_val, 100}, _timestamp}]}) when note_val in 41..52 do
+  def midi_to_wled({_pid, [{{157, note_val, vel}, _timestamp}]}) when note_val in 41..52 and vel > 0 do
     # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
     # for light 3
     adjusted_note_val = note_val - 40
     effect = @effect_mappings[adjusted_note_val]
-    MidiWled.post(3, effect)
-    IO.puts("handle light 3 octave 4")
+    IO.puts("handle light 3 " <> inspect(note_val))
+
+    Task.async(fn -> MidiWled.post(3, effect) end)
   end
 
-  def midi_to_wled({_pid, [{{157, note_val, 100}, _timestamp}]}) when note_val in 53..65 do
+  def midi_to_wled({_pid, [{{157, note_val, vel}, _timestamp}]}) when note_val in 53..65 and vel > 0 do
     # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
     # for light 4
     adjusted_note_val = note_val - 52
     effect = @effect_mappings[adjusted_note_val]
-    MidiWled.post(4, effect)
-    IO.puts("handle light 4 octave 5")
+    IO.puts("handle light 4 " <> inspect(note_val))
+
+    Task.async(fn -> MidiWled.post(4, effect) end)
   end
 
-  def midi_to_wled({_pid, [{{157, note_val, 100}, _timestamp}]}) when note_val in 53..64 do
-    # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
-    # for light 5
-  end
+  # def midi_to_wled({_pid, [{{157, note_val, vel}, _timestamp}]}) when note_val in 53..64 and vel > 0 do
+  #   # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
+  #   # for light 5
+  #   :ok
+  # end
 
-  def midi_to_wled({_pid, [{{141, note_val, 100}, _timestamp}]}) when note_val in 65..76 do
-    # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
-    # for light 6
-  end
+  # def midi_to_wled({_pid, [{{141, note_val, vel}, _timestamp}]}) when note_val in 65..76 and vel > 0 do
+  #   # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
+  #   # for light 6
+  #   :ok
+  # end
 
-  def midi_to_wled({_pid, [{{141, note_val, 100}, _timestamp}]}) when note_val in 77..88 do
-    # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
-    # for light 7
-  end
+  # def midi_to_wled({_pid, [{{141, note_val, vel}, _timestamp}]}) when note_val in 77..88 and vel > 0 do
+  #   # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
+  #   # for light 7
+  #   :ok
+  # end
 
-  def midi_to_wled({_pid, [{{141, note_val, 100}, _timestamp}]}) when note_val in 89..100 do
-    # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
-    # for light 8
-  end
+  # def midi_to_wled({_pid, [{{141, note_val, vel}, _timestamp}]}) when note_val in 89..100 and vel > 0 do
+  #   # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
+  #   # for light 8
+  #   :ok
+  # end
 
-  def midi_to_wled({_pid, [{{141, note_val, 100}, _timestamp}]}) when note_val in 101..112 do
-    # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
-    # for light 9
-  end
+  # def midi_to_wled({_pid, [{{141, note_val, vel}, _timestamp}]}) when note_val in 101..112 and vel > 0 do
+  #   # Send post Req with note_val mapped to an effect, light color or pallette is based on in memory state
+  #   # for light 9
+  #   :ok
+  # end
 
   def midi_to_wled({_pid, [{{141, _note_val, _100}, _timestamp}]}) do
     :ok

@@ -39,10 +39,14 @@ defmodule MidiWled.MidiInputHandler do
   #   IO.puts("Logging things:  " <> inspect(msg))
   #   {:noreply, state}
   # end
-
-  def handle_info(msg, state) do
+  def handle_info({_pid, [_ | _]} = msg, state) do
     Mappings.midi_to_wled(msg)
-    IO.puts("Logging things:  " <> inspect(msg))
+    # IO.puts("Logging things:  " <> inspect(msg))
+
+    {:noreply, state}
+  end
+
+  def handle_info(_msg, state) do
     {:noreply, state}
   end
 

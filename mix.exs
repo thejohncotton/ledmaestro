@@ -15,6 +15,7 @@ defmodule MidiWled.MixProject do
   def application do
     [
       mod: {MidiWled.Application, [:start]},
+      application: [:portmidi],
       extra_applications: [:logger]
     ]
   end
@@ -27,11 +28,11 @@ defmodule MidiWled.MixProject do
           targets: [
             macos: [os: :darwin, cpu: :x86_64],
             linux: [os: :linux, cpu: :x86_64]
-          ],
+          ]
         ]
       ]
     ]
-    end
+  end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
